@@ -67,14 +67,15 @@ jobs:
 
       - name: Create Release
         id: create_release
-        uses: actions/create-release@v1
+        uses: softprops/action-gh-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
           draft: false
           prerelease: false
+          files: releases/*
           body: |
             ## WebSocket Tunnel Release
 
@@ -104,11 +105,4 @@ jobs:
             ./ws-tunnel-client-linux-amd64 -local 127.0.0.1:1080 -server ws://2.2.2.2:8080/mm -password "your_password"
             ```
 
-            查看 `QUICK-START.md` 获取详细使用说明。
-
-      - name: Upload Release Assets
-        uses: softprops/action-gh-release@v1
-        with:
-          files: releases/*
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            查看 `QUICK-START.md` 获取详细使用说明.
