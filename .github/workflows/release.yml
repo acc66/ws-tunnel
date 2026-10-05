@@ -1,0 +1,114 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build Multi-Platform Binaries
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+
+      - name: Get dependencies
+        run: go mod download
+
+      - name: Build all platforms
+        run: |
+          # 创建输出目录
+          mkdir -p releases
+
+          # 版本信息
+          VERSION=${GITHUB_REF#refs/tags/}
+          BUILD_TIME=$(date -u +"%Y-%m-%d_%H:%M:%S_UTC")
+          GIT_COMMIT=$(git rev-parse --short HEAD)
+          LDFLAGS="-s -w -X main.Version=${VERSION} -X main.BuildTime=${BUILD_TIME} -X main.GitCommit=${GIT_COMMIT}"
+
+          # 服务端
+          GOOS=linux GOARCH=amd64 go build -ldflags="${LDFLAGS}" -o releases/ws-tunnel-server-linux-amd64 ws-tunnel-to-haproxy.go
+          GOOS=linux GOARCH=arm64 go build -ldflags="${LDFLAGS}" -o releases/ws-tunnel-server-linux-arm64 ws-tunnel-to-haproxy.go
+          GOOS=linux GOARCH=386 go build -ldflags="${LDFLAGS}" -o releases/ws-tunnel-server-linux-386 ws-tunnel-to-haproxy.go
+          GOOS=windows GOARCH=amd64 go build -ldflags="${LDFLAGS}" -o releases/ws-tunnel-server-windows-amd64.exe ws-tunnel-to-haproxy.go
+          GOOS=windows GOARCH=386 go build -ldflags="${LDFLAGS}" -o releases/ws-tunnel-server-windows-386.exe ws-tunnel-to-haproxy.go
+          GOOS=darwin GOARCH=amd64 go build -ldflags="${LDFLAGS}" -o releases/ws-tunnel-server-darwin-amd64 ws-tunnel-to-haproxy.go
+          GOOS=darwin GOARCH=arm64 go build -ldflags="${LDFLAGS}" -o releases/ws-tunnel-server-darwin-arm64 ws-tunnel-to-haproxy.go
+
+          # 客户端
+          GOOS=linux GOARCH=amd64 go build -ldflags="${LDFLAGS}" -o releases/ws-tunnel-client-linux-amd64 ws-tunnel-client.go
+          GOOS=linux GOARCH=arm64 go build -ldflags="${LDFLAGS}" -o releases/ws-tunnel-client-linux-arm64 ws-tunnel-client.go
+          GOOS=linux GOARCH=386 go build -ldflags="${LDFLAGS}" -o releases/ws-tunnel-client-linux-386 ws-tunnel-client.go
+          GOOS=windows GOARCH=amd64 go build -ldflags="${LDFLAGS}" -o releases/ws-tunnel-client-windows-amd64.exe ws-tunnel-client.go
+          GOOS=windows GOARCH=386 go build -ldflags="${LDFLAGS}" -o releases/ws-tunnel-client-windows-386.exe ws-tunnel-client.go
+          GOOS=darwin GOARCH=amd64 go build -ldflags="${LDFLAGS}" -o releases/ws-tunnel-client-darwin-amd64 ws-tunnel-client.go
+          GOOS=darwin GOARCH=arm64 go build -ldflags="${LDFLAGS}" -o releases/ws-tunnel-client-darwin-arm64 ws-tunnel-client.go
+
+          # 复制文档
+          cp README.md releases/
+          cp QUICK-START.md releases/
+          cp README-COMPLETE.md releases/
+          cp run-server.sh releases/
+          cp run-client.sh releases/
+          cp LICENSE releases/
+
+          # 生成校验和
+          cd releases
+          sha256sum ws-tunnel-* > SHA256SUMS
+          cd ..
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+          body: |
+            ## WebSocket Tunnel Release
+
+            ### 下载说明
+
+            #### 服务端（B 服务器）
+            - **Linux x64**: `ws-tunnel-server-linux-amd64`
+            - **Linux ARM64**: `ws-tunnel-server-linux-arm64`
+            - **Windows x64**: `ws-tunnel-server-windows-amd64.exe`
+            - **macOS Intel**: `ws-tunnel-server-darwin-amd64`
+            - **macOS Apple Silicon**: `ws-tunnel-server-darwin-arm64`
+
+            #### 客户端（A 服务器）
+            - **Linux x64**: `ws-tunnel-client-linux-amd64`
+            - **Linux ARM64**: `ws-tunnel-client-linux-arm64`
+            - **Windows x64**: `ws-tunnel-client-windows-amd64.exe`
+            - **macOS Intel**: `ws-tunnel-client-darwin-amd64`
+            - **macOS Apple Silicon**: `ws-tunnel-client-darwin-arm64`
+
+            ### 快速开始
+
+            ```bash
+            # 服务端
+            ./ws-tunnel-server-linux-amd64 -listen :8080 -path /mm -haproxy-ip 3.3.3.3 -haproxy-port 20001 -password "your_password"
+
+            # 客户端
+            ./ws-tunnel-client-linux-amd64 -local 127.0.0.1:1080 -server ws://2.2.2.2:8080/mm -password "your_password"
+            ```
+
+            查看 `QUICK-START.md` 获取详细使用说明。
+
+      - name: Upload Release Assets
+        uses: softprops/action-gh-release@v1
+        with:
+          files: releases/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

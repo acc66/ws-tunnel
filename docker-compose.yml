@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  # B 服务器 - 隧道服务端
+  ws-tunnel-server:
+    build:
+      context: .
+      dockerfile: Dockerfile.server
+    container_name: ws-tunnel-server
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      - LISTEN_PORT=8080
+      - WS_PATH=/mm
+      - HAPROXY_IP=3.3.3.3
+      - HAPROXY_PORT=20001
+      - PASSWORD=your_strong_password_here
+    command:
+      - "-listen"
+      - ":8080"
+      - "-path"
+      - "/mm"
+      - "-haproxy-ip"
+      - "3.3.3.3"
+      - "-haproxy-port"
+      - "20001"
+      - "-password"
+      - "your_strong_password_here"
+
+  # A 服务器 - 隧道客户端
+  ws-tunnel-client:
+    build:
+      context: .
+      dockerfile: Dockerfile.client
+    container_name: ws-tunnel-client
+    restart: always
+    ports:
+      - "1080:1080"
+    environment:
+      - LOCAL_ADDR=0.0.0.0:1080
+      - SERVER_ADDR=ws://2.2.2.2:8080/mm
+      - PASSWORD=your_strong_password_here
+    command:
+      - "-local"
+      - "0.0.0.0:1080"
+      - "-server"
+      - "ws://2.2.2.2:8080/mm"
+      - "-password"
+      - "your_strong_password_here"
+    depends_on:
+      - ws-tunnel-server
