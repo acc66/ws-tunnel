@@ -86,6 +86,12 @@ func handleWebSocketTunnel(w http.ResponseWriter, r *http.Request, haproxyAddr s
 	log.Printf("🔗 已连接到 HAProxy: %s", haproxyAddr)
 
 	// 构造 HTTP Upgrade 请求发送给 HAProxy
+	// 使用目标服务器的地址作为 Host
+	targetHost := *haproxyIP
+	if *haproxyPort != "80" && *haproxyPort != "443" {
+		targetHost = fmt.Sprintf("%s:%s", *haproxyIP, *haproxyPort)
+	}
+
 	upgradeReq := fmt.Sprintf(
 		"GET %s HTTP/1.1\r\n"+
 			"Host: %s\r\n"+
@@ -94,7 +100,7 @@ func handleWebSocketTunnel(w http.ResponseWriter, r *http.Request, haproxyAddr s
 			"Sec-WebSocket-Version: 13\r\n"+
 			"Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\n"+
 			"\r\n",
-		*wsPath, r.Host)
+		*wsPath, targetHost)
 
 	if _, err := haproxyConn.Write([]byte(upgradeReq)); err != nil {
 		log.Printf("❌ 发送 WebSocket 握手失败: %v", err)
