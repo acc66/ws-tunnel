@@ -31,7 +31,14 @@ jobs:
           mkdir -p releases
           LDFLAGS="-s -w"
 
-          # 服务端
+          # 服务端（WebSocket 到 TCP）
+          GOOS=linux GOARCH=amd64 go build -ldflags="${LDFLAGS}" -o releases/ws-tunnel-server-tcp-linux-amd64 ws-tunnel-server-tcp.go
+          GOOS=linux GOARCH=arm64 go build -ldflags="${LDFLAGS}" -o releases/ws-tunnel-server-tcp-linux-arm64 ws-tunnel-server-tcp.go
+          GOOS=windows GOARCH=amd64 go build -ldflags="${LDFLAGS}" -o releases/ws-tunnel-server-tcp-windows-amd64.exe ws-tunnel-server-tcp.go
+          GOOS=darwin GOARCH=amd64 go build -ldflags="${LDFLAGS}" -o releases/ws-tunnel-server-tcp-darwin-amd64 ws-tunnel-server-tcp.go
+          GOOS=darwin GOARCH=arm64 go build -ldflags="${LDFLAGS}" -o releases/ws-tunnel-server-tcp-darwin-arm64 ws-tunnel-server-tcp.go
+
+          # 原服务端（保留）
           GOOS=linux GOARCH=amd64 go build -ldflags="${LDFLAGS}" -o releases/ws-tunnel-server-linux-amd64 ws-tunnel-to-haproxy.go
           GOOS=linux GOARCH=arm64 go build -ldflags="${LDFLAGS}" -o releases/ws-tunnel-server-linux-arm64 ws-tunnel-to-haproxy.go
           GOOS=linux GOARCH=386 go build -ldflags="${LDFLAGS}" -o releases/ws-tunnel-server-linux-386 ws-tunnel-to-haproxy.go
