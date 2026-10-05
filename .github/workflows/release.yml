@@ -6,6 +6,9 @@ on:
       - 'v*'
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     name: Build Multi-Platform Binaries
@@ -13,10 +16,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
           go-version: '1.21'
 
@@ -25,14 +28,8 @@ jobs:
 
       - name: Build all platforms
         run: |
-          # 创建输出目录
           mkdir -p releases
-
-          # 版本信息
-          VERSION=${GITHUB_REF#refs/tags/}
-          BUILD_TIME=$(date -u +"%Y-%m-%d_%H:%M:%S_UTC")
-          GIT_COMMIT=$(git rev-parse --short HEAD)
-          LDFLAGS="-s -w -X main.Version=${VERSION} -X main.BuildTime=${BUILD_TIME} -X main.GitCommit=${GIT_COMMIT}"
+          LDFLAGS="-s -w"
 
           # 服务端
           GOOS=linux GOARCH=amd64 go build -ldflags="${LDFLAGS}" -o releases/ws-tunnel-server-linux-amd64 ws-tunnel-to-haproxy.go
@@ -63,46 +60,44 @@ jobs:
           # 生成校验和
           cd releases
           sha256sum ws-tunnel-* > SHA256SUMS
-          cd ..
 
       - name: Create Release
-        id: create_release
-        uses: softprops/action-gh-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.ref_name }}
-          name: Release ${{ github.ref_name }}
-          draft: false
-          prerelease: false
           files: releases/*
           body: |
-            ## WebSocket Tunnel Release
+            ## WebSocket Tunnel ${{ github.ref_name }}
 
-            ### 下载说明
+            ### 📥 下载
 
             #### 服务端（B 服务器）
             - **Linux x64**: `ws-tunnel-server-linux-amd64`
             - **Linux ARM64**: `ws-tunnel-server-linux-arm64`
             - **Windows x64**: `ws-tunnel-server-windows-amd64.exe`
             - **macOS Intel**: `ws-tunnel-server-darwin-amd64`
-            - **macOS Apple Silicon**: `ws-tunnel-server-darwin-arm64`
+            - **macOS M1/M2**: `ws-tunnel-server-darwin-arm64`
 
             #### 客户端（A 服务器）
             - **Linux x64**: `ws-tunnel-client-linux-amd64`
             - **Linux ARM64**: `ws-tunnel-client-linux-arm64`
             - **Windows x64**: `ws-tunnel-client-windows-amd64.exe`
             - **macOS Intel**: `ws-tunnel-client-darwin-amd64`
-            - **macOS Apple Silicon**: `ws-tunnel-client-darwin-arm64`
+            - **macOS M1/M2**: `ws-tunnel-client-darwin-arm64`
 
-            ### 快速开始
+            ### 🚀 快速开始
 
+            **服务端:**
             ```bash
-            # 服务端
+            chmod +x ws-tunnel-server-linux-amd64
             ./ws-tunnel-server-linux-amd64 -listen :8080 -path /mm -haproxy-ip 3.3.3.3 -haproxy-port 20001 -password "your_password"
+            ```
 
-            # 客户端
+            **客户端:**
+            ```bash
+            chmod +x ws-tunnel-client-linux-amd64
             ./ws-tunnel-client-linux-amd64 -local 127.0.0.1:1080 -server ws://2.2.2.2:8080/mm -password "your_password"
             ```
 
-            查看 `QUICK-START.md` 获取详细使用说明.
+            📖 查看 [QUICK-START.md](https://github.com/acc66/ws-tunnel/blob/main/QUICK-START.md) 获取详细使用说明
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
