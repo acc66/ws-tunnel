@@ -76,7 +76,15 @@ chmod +x ws-tunnel-client-linux-amd64
   -server ws://2.2.2.2:8080/mm \
   -password "your_strong_password"
 ```
+  A# 运行
+./ws-tunnel-client-linux-amd64 \
+  -local 0.0.0.0:1080 \
+  -server ws://43.198.226.74:8080/mm \
+  -password "123668"
+B服务器
 
+./ws-tunnel-server-tcp-linux-amd64 -listen :8080 -path /mm -target 43.198.226.74:20001 -password "123668"
+  现在这个我已经测试通过了    我想加入非/mm 拉黑ip  共享redis库  加进去go  再加入脚本支持添加 删除端口 开机启动 和查看日志 等等帮我完善 
 ### 3. 测试
 
 ```bash
