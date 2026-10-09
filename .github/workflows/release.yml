@@ -38,6 +38,11 @@ jobs:
           GOOS=darwin GOARCH=amd64 go build -ldflags="${LDFLAGS}" -o releases/ws-tunnel-server-tcp-darwin-amd64 ws-tunnel-server-tcp.go
           GOOS=darwin GOARCH=arm64 go build -ldflags="${LDFLAGS}" -o releases/ws-tunnel-server-tcp-darwin-arm64 ws-tunnel-server-tcp.go
 
+          # A 服务器 TCP 中转 + 反探测黑名单（Redis 共享）
+          GOOS=linux GOARCH=amd64 go build -ldflags="${LDFLAGS}" -o releases/gotcp-filter-linux-amd64 gotcp-filter.go
+          GOOS=linux GOARCH=arm64 go build -ldflags="${LDFLAGS}" -o releases/gotcp-filter-linux-arm64 gotcp-filter.go
+          cp gotcp.sh releases/
+
           # 原服务端（保留）
           GOOS=linux GOARCH=amd64 go build -ldflags="${LDFLAGS}" -o releases/ws-tunnel-server-linux-amd64 ws-tunnel-to-haproxy.go
           GOOS=linux GOARCH=arm64 go build -ldflags="${LDFLAGS}" -o releases/ws-tunnel-server-linux-arm64 ws-tunnel-to-haproxy.go
@@ -66,7 +71,7 @@ jobs:
 
           # 生成校验和
           cd releases
-          sha256sum ws-tunnel-* > SHA256SUMS
+          sha256sum ws-tunnel-* gotcp-filter-* > SHA256SUMS
 
       - name: Create Release
         uses: softprops/action-gh-release@v2

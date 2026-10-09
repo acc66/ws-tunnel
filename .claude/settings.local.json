@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(bash -n hy9.sh)",
+      "Bash(timeout 30 bash hy9.sh --help)",
+      "Bash(echo \"退出码: $?\")",
+      "Bash(cd /mnt/c/Users/Administrator/Desktop/wp2-main && timeout 30 bash hy9.sh --help 2>&1 | head -20)",
+      "Read(//mnt/c/Users/Administrator/Desktop/**)",
+      "Bash(go version *)",
+      "Bash(chmod +x build.sh run-server.sh run-client.sh)",
+      "Bash(git init *)"
+    ]
+  }
+}
